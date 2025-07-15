@@ -28,7 +28,7 @@ def get_jenkins_context() -> tuple[str, str]:
 async def jenkins_api_call(
     api_path: str, method: str = "GET", data: dict[str, Any] = None
 ) -> dict[str, Any] | None:
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(verify=False) as client:
         jenkins_url, jenkins_token = get_jenkins_context()
         url = f"{jenkins_url.rstrip('/')}/{api_path.lstrip('/')}"
         headers = {
