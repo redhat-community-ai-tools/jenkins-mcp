@@ -16,6 +16,7 @@ parameters:
     value: letsencrypt-dns
   - name: MCP_HOST
     value: jenkins-mcp.example.com
+objects:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
