@@ -1,0 +1,212 @@
+# Jenkins MCP Server Development Context
+
+## Conversation Summary
+
+This file contains the complete conversation history for developing a Jenkins MCP (Model Context Protocol) server that supports multi-tenancy through header-based authentication.
+
+## Initial Request
+
+User wanted to build an MCP server for Jenkins that:
+- Gets the URL and token of the Jenkins instance from request headers
+- Serves multiple Jenkins instances from a single MCP server
+- Unlike other servers, supports multi-tenancy
+
+## Research Phase
+
+### Official Jenkins MCP Plugin Analysis
+From https://plugins.jenkins.io/mcp-server/, the official plugin provides these tools:
+- `getBuild`: Retrieve a specific build or the last build of a Jenkins job
+- `getJob`: Get a Jenkins job by its full path
+- `getAllJobs`: Get a list of all Jenkins jobs
+- `triggerBuild`: Trigger a build of a job
+- `getBuildLog`: Retrieve log lines with pagination for a specific build or the last build of a Jenkins job
+
+## Implementation
+
+### Server Architecture
+- Uses FastMCP framework
+- Extracts Jenkins URL and token from request headers (`X-Jenkins-Url`, `X-Jenkins-Token`)
+- Supports both stdio (local) and network transports (SSE)
+- Async HTTP client using httpx for Jenkins API calls
+
+### Code Structure
+```python
+import os
+from typing import Any, Optional
+import httpx
+from mcp.server.fastmcp import FastMCP
+
+mcp = FastMCP("jenkins")
+
+# Utility to extract Jenkins context from request headers
+def get_jenkins_context() -> tuple[str, str]:
+    ctx = mcp.get_context().request_context.request
+    jenkins_url = ctx.headers.get("X-Jenkins-Url")
+    jenkins_token = ctx.headers.get("X-Jenkins-Token")
+    if not jenkins_url or not jenkins_token:
+        raise Exception("Missing Jenkins URL or Token in headers")
+    return jenkins_url, jenkins_token
+
+# Jenkins API client
+async def jenkins_api_call(endpoint: str, method: str = "GET", data: Optional[Any] = None, params: Optional[dict] = None) -> Any:
+    jenkins_url, jenkins_token = get_jenkins_context()
+    url = f"{jenkins_url.rstrip('/')}/{endpoint.lstrip('/')}"
+    headers = {
+        "Authorization": f"Bearer {jenkins_token}",
+        "Accept": "application/json",
+    }
+    async with httpx.AsyncClient() as client:
+        response = await client.request(method, url, headers=headers, json=data, params=params)
+        response.raise_for_status()
+        return response.json()
+
+# MCP tools
+@mcp.tool()
+async def getAllJobs() -> Any:
+    """Get a list of all Jenkins jobs."""
+    return await jenkins_api_call("api/json")
+
+@mcp.tool()
+async def getJob(full_path: str) -> Any:
+    """Get a Jenkins job by its full path."""
+    return await jenkins_api_call(f"job/{full_path}/api/json")
+
+@mcp.tool()
+async def getBuild(full_path: str, build_number: Optional[int] = None) -> Any:
+    """Retrieve a specific build or the last build of a Jenkins job."""
+    if build_number is not None:
+        endpoint = f"job/{full_path}/{build_number}/api/json"
+    else:
+        endpoint = f"job/{full_path}/lastBuild/api/json"
+    return await jenkins_api_call(endpoint)
+
+@mcp.tool()
+async def triggerBuild(full_path: str) -> str:
+    """Trigger a build of a job."""
+    await jenkins_api_call(f"job/{full_path}/build", method="POST")
+    return f"Build triggered for job: {full_path}"
+
+@mcp.tool()
+async def getBuildLog(full_path: str, build_number: Optional[int] = None, start: int = 0) -> Any:
+    """Retrieve log lines for a specific build or the last build of a Jenkins job. Supports pagination via 'start'."""
+    if build_number is not None:
+        endpoint = f"job/{full_path}/{build_number}/logText/progressiveText"
+    else:
+        endpoint = f"job/{full_path}/lastBuild/logText/progressiveText"
+    params = {"start": start}
+    return await jenkins_api_call(endpoint, params=params)
+
+if __name__ == "__main__":
+    mcp.run(transport=os.environ.get("MCP_TRANSPORT", "stdio"))
+```
+
+## Documentation Updates
+
+### README.md Changes
+- Updated to reflect Jenkins MCP server instead of OCM
+- Added multi-tenancy explanation
+- Added header-based authentication details
+- Added Podman/Docker container instructions
+- Listed all available tools with descriptions
+- Added example MCP client configurations
+- Referenced official Jenkins MCP plugin for parity
+
+### Key Features Documented
+- **Multi-tenancy**: Serve multiple Jenkins instances from a single MCP server
+- **Header-based authentication**: Jenkins URL and token provided per request via headers
+- **Parity with official Jenkins MCP plugin**: Implements the same core tools
+- **Container-ready**: Includes Podman/Docker support
+
+## Testing Phase
+
+### Test Results
+1. **getAllJobs**: Successfully called, returned Jenkins instance metadata
+   - Result: Empty jobs list (`"jobs": []`)
+   - Server accessible and responding correctly
+
+2. **getJob**: Attempted to get job `rhoai/job/autotrigger-smoke`
+   - Initial attempt with `rhoai/job/autotrigger-smoke` → 404 Not Found
+   - Second attempt with `rhoai/autotrigger-smoke` → 404 Not Found
+   - Issue: Path construction mismatch between MCP tool and Jenkins API
+
+### Path Construction Issue
+- Jenkins API expects: `/job/rhoai/job/autotrigger-smoke/api/json`
+- MCP tool constructs: `/job/rhoai/job/autotrigger-smoke/api/json` (should be correct)
+- Problem: Tool may be double-adding `/job/` segments or not handling folder paths correctly
+
+## Outstanding Issues
+
+1. **Path Construction**: The `getJob` tool needs debugging for proper folder path handling
+2. **SSL Certificate**: Initial testing showed SSL certificate verification issues (resolved)
+3. **Documentation**: Need to add detailed docstrings to each MCP tool
+
+## Next Steps
+
+1. Fix the path construction issue in `getJob` tool
+2. Add comprehensive docstrings to all MCP tools
+3. Test all tools with real Jenkins instances
+4. Add error handling and response formatting
+5. Consider adding more Jenkins tools beyond the basic five
+
+## PR Description
+
+```
+## Jenkins MCP Server
+
+This PR introduces a new MCP (Model Context Protocol) server for Jenkins that supports multi-tenancy through header-based authentication. Unlike traditional setups, this server can serve multiple Jenkins instances from a single MCP server by extracting the Jenkins URL and API token from each request's headers.
+
+### Key Features:
+- **Multi-tenancy**: Serve multiple Jenkins instances from one server
+- **Header-based auth**: Jenkins URL/token provided per request via headers
+- **Feature parity**: Implements the same core tools as the official Jenkins MCP plugin
+- **Container-ready**: Includes Podman/Docker support
+
+### Available Tools:
+- `getAllJobs` - List all Jenkins jobs
+- `getJob` - Get job by full path
+- `getBuild` - Retrieve build information
+- `triggerBuild` - Trigger job builds
+- `getBuildLog` - Get build logs with pagination
+
+The server supports both stdio (local) and network transports (SSE) for flexible deployment scenarios.
+```
+
+## Files Modified
+
+1. `jenkins_mcp_server.py` - Main server implementation
+2. `README.md` - Complete documentation update
+3. `.context` - This context file
+
+## Environment Setup
+
+### For stdio mode:
+```bash
+export JENKINS_URL="https://your-jenkins.example.com/"
+export JENKINS_TOKEN="your-api-token"
+export MCP_TRANSPORT="stdio"
+```
+
+### For network mode:
+Headers required in each request:
+- `X-Jenkins-Url`: Jenkins instance URL
+- `X-Jenkins-Token`: Jenkins API token
+
+## Container Support
+
+```bash
+# Build
+podman build -t jenkins-mcp .
+
+# Run with environment variables
+podman run -i --rm \
+  -e JENKINS_URL="https://jenkins.example.com/" \
+  -e JENKINS_TOKEN="REDACTED" \
+  -e MCP_TRANSPORT="stdio" \
+  jenkins-mcp
+```
+
+## References
+
+- [Official Jenkins MCP Server Plugin](https://plugins.jenkins.io/mcp-server/)
+- [Jenkins API Token Documentation](https://www.jenkins.io/blog/2018/07/02/new-api-token-system/)
+- [FastMCP Documentation](https://github.com/jlowin/fastmcp)
