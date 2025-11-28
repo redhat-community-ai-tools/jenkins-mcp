@@ -1,7 +1,10 @@
 import os
 from typing import Any, Optional
 import httpx
+from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
+
+load_dotenv()
 
 mcp = FastMCP("jenkins")
 

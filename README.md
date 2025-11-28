@@ -4,11 +4,16 @@ MCP Server for multiple Jenkins instances
 
 ## Overview
 
-This MCP (Model Context Protocol) server allows you to interact with multiple Jenkins instances from a single server. Unlike traditional setups, this server extracts the Jenkins URL and API token from each request's headers, enabling true multi-tenancy.
+This MCP (Model Context Protocol) server allows you to interact with multiple Jenkins instances from a single server. Unlike traditional setups, this server extracts the Jenkins URL and an API token from each request's headers, enabling true multi-tenancy.
 
 - **Multi-tenancy**: Serve multiple Jenkins instances from a single MCP server.
 - **Header-based authentication**: Jenkins URL and token are provided per request via headers.
 - **Parity with official Jenkins MCP plugin**: Implements the same core tools as the [official Jenkins MCP Server Plugin](https://plugins.jenkins.io/mcp-server/).
+
+### .env File Support
+The server can load configuration from a `.env` file in the project root. This is useful for development or when running the server outside of a container. A `.env.sample` file is provided as a template.
+
+Environment variables set in your shell will take precedence over values in the `.env` file.
 
 ## Running the Jenkins MCP Server
 
