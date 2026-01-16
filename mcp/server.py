@@ -5,7 +5,10 @@ from mcp.server.fastmcp import FastMCP
 
 mcp = FastMCP("jenkins")
 
-MCP_TRANSPORT = os.environ.get("MCP_TRANSPORT", "stdio")
+MCP_TRANSPORT = "stdio"  # Always use stdio for local execution
+
+# SSL verification - configurable via environment variable
+SSL_VERIFY = os.getenv("SSL_VERIFY", "true").lower() == "true"
 
 
 def get_jenkins_context() -> tuple[str, str]:
@@ -28,13 +31,26 @@ def get_jenkins_context() -> tuple[str, str]:
 async def jenkins_api_call(
     api_path: str, method: str = "GET", data: dict[str, Any] = None
 ) -> dict[str, Any] | None:
-    async with httpx.AsyncClient(verify=False) as client:
+    async with httpx.AsyncClient(verify=SSL_VERIFY, timeout=120.0) as client:
         jenkins_url, jenkins_token = get_jenkins_context()
         url = f"{jenkins_url.rstrip('/')}/{api_path.lstrip('/')}"
-        headers = {
-            "Authorization": f"Bearer {jenkins_token}",
-            "Accept": "application/json",
-        }
+
+        # Check if token is in username:password format (contains :)
+        if ":" in jenkins_token:
+            # Use Basic Auth
+            import base64
+            auth_b64 = base64.b64encode(jenkins_token.encode()).decode()
+            headers = {
+                "Authorization": f"Basic {auth_b64}",
+                "Accept": "application/json",
+            }
+        else:
+            # Use Bearer token
+            headers = {
+                "Authorization": f"Bearer {jenkins_token}",
+                "Accept": "application/json",
+            }
+
         if method.upper() == "GET":
             response = await client.request(method, url, headers=headers, params=data)
         else:

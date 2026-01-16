@@ -1,1 +1,53 @@
+# Python
 venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.log
+
+# Environment variables (SECURITY: Never commit credentials!)
+.env
+.env.local
+.env.*.local
+.env.bak
+*.env.bak
+
+# Claude settings (contains personal permissions and may contain credentials)
+.claude/
+
+# Test variables (contain cluster credentials and sensitive config)
+test-variables/
+test-variables/*.yml
+*-test-variables.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports (optional - you may want to commit these)
+# reports/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local test files
+test_*.txt
+console_output_*.txt
+*_output.log
+dry_run_*.txt

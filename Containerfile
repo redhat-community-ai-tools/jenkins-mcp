@@ -5,6 +5,6 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY jenkins_mcp_server.py ./
+COPY mcp/ ./mcp/
 
-CMD ["python", "jenkins_mcp_server.py"]
+CMD ["python", "mcp/server.py"]
