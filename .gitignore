@@ -38,8 +38,8 @@ test-variables/*.yml
 .DS_Store
 Thumbs.db
 
-# Reports (optional - you may want to commit these)
-# reports/
+# Reports (generated at runtime, not committed)
+reports/
 
 # Test coverage
 .coverage
