@@ -133,7 +133,7 @@ TRACER_PATH=/path/to/tracer/tracer.sh
 
 ```bash
 # Activate virtual environment
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 source venv/bin/activate
 
 # Analyze latest RHOAI build (automatically finds the latest build number)
@@ -171,7 +171,7 @@ python scripts/comprehensive_analysis.py 3695 rhoai
 
 ```bash
 # Step 1: Navigate to the analyzer directory
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 
 # Step 2: Find the latest RHOAI build and analyze it
 python venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest

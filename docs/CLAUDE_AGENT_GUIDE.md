@@ -30,7 +30,7 @@ The analyzer automatically finds and links the parent build for nightly crons.
 ### Find and Analyze Latest Build (Simplest Method)
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest
 ```
 
@@ -43,7 +43,7 @@ venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build l
 ### Full Analysis for RHOAI/ODH (Recommended for Nightly Builds)
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 
 # Step 1: Find latest build number
 venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest | grep "Build #"
@@ -126,7 +126,7 @@ venv/bin/python scripts/comprehensive_analysis.py 3695 rhoai --enable-trend
 ### Scenario 1: "Analyze last night's build"
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 
 # Quick method - one command does everything
 venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest
@@ -138,7 +138,7 @@ cat reports/analysis-cypress-dashboard-tests-3695.md
 ### Scenario 2: "Full RHOAI analysis with all features"
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 
 # Step 1: Find latest build
 BUILD_NUM=$(venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest 2>&1 | grep "Build #" | grep -oP '\d+' | head -1)
@@ -153,7 +153,7 @@ cat reports/current/RHOAI/latest-build-${BUILD_NUM}.md
 ### Scenario 3: "Compare today's build to yesterday's"
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer
+cd dashboard-build-analyzer
 
 # Use --enable-trend flag for automated nightly analysis
 venv/bin/python scripts/comprehensive_analysis.py 3695 rhoai --enable-trend
@@ -248,7 +248,7 @@ venv/bin/python scripts/analyze_job.py
 
 ```bash
 # Check if .env exists
-ls -la /Users/acoughli/dashboard-build-analyzer/.env
+ls -la dashboard-build-analyzer/.env
 
 # Verify config
 venv/bin/python -c "from analyzer.config import Config; Config.validate()"
@@ -265,7 +265,7 @@ curl -u "$JENKINS_USER:$JENKINS_TOKEN" "$JENKINS_URL/api/json"
 
 ## 📖 Environment Variables
 
-All credentials are loaded from `/Users/acoughli/dashboard-build-analyzer/.env`:
+All credentials are loaded from `dashboard-build-analyzer/.env`:
 
 **Required:**
 - `JENKINS_URL` - Jenkins instance URL
@@ -319,20 +319,23 @@ When you need to manually rerun a specific test:
 cd ~/odh-dashboard && npm install
 
 # Test-variables are stored in dashboard-build-analyzer:
-# - RHOAI: /Users/acoughli/dashboard-build-analyzer/test-variables/rhoai-test-variables.yml
-# - ODH: /Users/acoughli/dashboard-build-analyzer/test-variables/odh-test-variables.yml
+# - RHOAI: dashboard-build-analyzer/test-variables/rhoai-test-variables.yml
+# - ODH: dashboard-build-analyzer/test-variables/odh-test-variables.yml
 ```
 
 ### Login to Cluster
 ```bash
+# Export credentials from your .env file first
+source .env  # Or manually export the variables
+
 # For RHOAI
-oc login -u htpasswd-cluster-admin-user -p 'rhodsPW#123456' \
-  --server=https://api.dash-e2e-rhoai.osp.rh-ods.com:6443 \
+oc login -u "$RHOAI_USERNAME" -p "$RHOAI_PASSWORD" \
+  --server="$RHOAI_API_SERVER" \
   --insecure-skip-tls-verify=true
 
 # For ODH
-oc login -u htpasswd-cluster-admin-user -p 'rhodsPW#123456' \
-  --server=https://api.dash-e2e-odh.osp.rh-ods.com:6443 \
+oc login -u "$ODH_USERNAME" -p "$ODH_PASSWORD" \
+  --server="$ODH_API_SERVER" \
   --insecure-skip-tls-verify=true
 ```
 
@@ -341,7 +344,7 @@ oc login -u htpasswd-cluster-admin-user -p 'rhodsPW#123456' \
 cd ~/odh-dashboard/packages/cypress
 
 # Run specific test file
-export CY_TEST_CONFIG='/Users/acoughli/dashboard-build-analyzer/test-variables/rhoai-test-variables.yml'
+export CY_TEST_CONFIG='dashboard-build-analyzer/test-variables/rhoai-test-variables.yml'
 npx cypress run --spec 'cypress/tests/e2e/dashboardNavigation/testUserLogin.cy.ts' --browser electron
 
 # Run test by name (grep filter)

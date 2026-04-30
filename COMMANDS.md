@@ -5,19 +5,19 @@
 ### Analyze Latest Build (Fastest - One Command)
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer && venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest
+cd dashboard-build-analyzer && venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest
 ```
 
 ### Full RHOAI Analysis (Most Complete)
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer && venv/bin/python scripts/comprehensive_analysis.py 3695 rhoai
+cd dashboard-build-analyzer && venv/bin/python scripts/comprehensive_analysis.py 3695 rhoai
 ```
 
 ### Full ODH Analysis
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer && venv/bin/python scripts/comprehensive_analysis.py 3691 odh
+cd dashboard-build-analyzer && venv/bin/python scripts/comprehensive_analysis.py 3691 odh
 ```
 
 ## 📂 Report Locations
@@ -36,7 +36,7 @@ cat reports/analysis-*.md
 ## 🔍 Find Build Number
 
 ```bash
-cd /Users/acoughli/dashboard-build-analyzer && venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest 2>&1 | grep "Build #"
+cd dashboard-build-analyzer && venv/bin/python scripts/analyze_job.py --job "cypress/dashboard-tests" --build latest 2>&1 | grep "Build #"
 ```
 
 ## ✅ Key Facts
